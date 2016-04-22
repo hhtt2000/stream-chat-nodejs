@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  	<meta charset="utf-8">
+    <title>CHANNEL LIST</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+    <h1>CHANNEL LIST</h1>
+    <p>You can join one of the contents below.</p>
+    <% for(var idx in rooms) { %>
+    <a href="/channel/<%= rooms[idx].id %>"><%= rooms[idx].id %></a><br>
+    <% } %>
+    <br>
+    <a href="/">HOME</a>
+  </body>
+</html>
