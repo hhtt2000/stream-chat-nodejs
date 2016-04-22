@@ -5,7 +5,7 @@ Simple streaming demo with chat on web browser.
 * web browser (excluding internet explorer less than windows 8+ 11 )
 * node.js
 * any media devices (camera, mic, etc..)
- * You may need Xsplit to share your screen with others.
+ * You may need some applications like Xsplit to share your screen with others.
 
 ## how to run
 ```
