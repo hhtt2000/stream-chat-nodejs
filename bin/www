@@ -95,9 +95,8 @@ function onListening() {
   Stream + Chat Socekt
 */
 var channel = io.of('/channel');
-var numUsers = 0;
-var streamerId;
-var remoteId;
+var numUsers = {};
+var streamerIds = {};
 
 channel.on('connection', function (socket) {
   var addedUser = false;
@@ -105,40 +104,47 @@ channel.on('connection', function (socket) {
   // when the client emits 'new message', this listens and executes
   socket.on('new message', function (data) {
     // we tell the client to execute 'new message'
-    socket.broadcast.emit('new message', {
+    socket.in(socket.room).broadcast.emit('new message', {
       username: socket.username,
       message: data
     });
   });
 
   // when the client emits 'add user', this listens and executes
-  socket.on('add user', function (username) {
+  socket.on('add user', function (data) {
     if (addedUser) return;
 
+    // set the room to the current socket
+    socket.room = data.lastPath;
+    socket.join(socket.room);
+
     // we store the username in the socket session for this client
-    socket.username = username;
-    ++numUsers;
+    socket.username = data.username;
+    if(numUsers[socket.room] == undefined) {
+      numUsers[socket.room] = 0;
+    }
+    ++numUsers[socket.room];
     addedUser = true;
     socket.emit('login', {
-      numUsers: numUsers
+      numUsers: numUsers[socket.room]
     });
     // echo globally (all clients) that a person has connected
-    socket.broadcast.emit('user joined', {
+    socket.in(socket.room).broadcast.emit('user joined', {
       username: socket.username,
-      numUsers: numUsers
+      numUsers: numUsers[socket.room]
     });
   });
 
   // when the client emits 'typing', we broadcast it to others
   socket.on('typing', function () {
-    socket.broadcast.emit('typing', {
+    socket.in(socket.room).broadcast.emit('typing', {
       username: socket.username
     });
   });
 
   // when the client emits 'stop typing', we broadcast it to others
   socket.on('stop typing', function () {
-    socket.broadcast.emit('stop typing', {
+    socket.in(socket.room).broadcast.emit('stop typing', {
       username: socket.username
     });
   });
@@ -146,54 +152,60 @@ channel.on('connection', function (socket) {
   // when the user disconnects.. perform this
   socket.on('disconnect', function () {
     if (addedUser) {
-      --numUsers;
+      --numUsers[socket.room];
 
       // echo globally that this client has left
-      socket.broadcast.emit('user left', {
+      socket.in(socket.room).broadcast.emit('user left', {
         username: socket.username,
-        numUsers: numUsers
+        numUsers: numUsers[socket.room]
       });
+      socket.leave(socket.room);
     }
   });
 
   // client <-> streamer
-  socket.on('streamer init', function() {
-    streamerId = socket.id;
-    socket.emit('streamer init', {id: streamerId});
+  socket.on('streamer init', function(data) {
+    streamerIds[data.room] = socket.id;
+    socket.emit('streamer init', {id: socket.id});
   });
 
-  socket.on('remote init', function() {
-    remoteId = socket.id;
-    socket.emit('remote init', {id: remoteId});
+  socket.on('remote init', function(data) {
+    socket.room = data.room;
+    socket.emit('remote init', {id: socket.id});
   });
 
   socket.on('remote video', function() {
-    console.log('client to streamer with pc.');
-    socket.to(streamerId).emit('streamer video');
+    console.log('request stream: client to streamer.');
+    if(streamerIds[socket.room] != undefined) {
+      socket.to(streamerIds[socket.room]).emit('streamer video', {remoteId: socket.id});  
+    } else {
+      console.log(`There's no streamer there.`);
+    }
+    
   });
 
-  socket.on('streamer video', function() {
+  socket.on('streamer video', function(data) {
     console.log('streamer to client with pc.');
-    socket.to(remoteId).emit('remote video');
+    socket.to(data.remoteId).emit('remote video');
   });
 
   socket.on('streamer desc', function(data) {
     console.log('streamer desc to client.');
-    socket.to(remoteId).emit('remote desc', {desc: data.desc});
+    socket.to(data.remoteId).emit('remote desc', {desc: data.desc});
   });
 
   socket.on('remote desc', function(data) {
     console.log('client desc to streamer.');
-    socket.to(streamerId).emit('streamer desc', {desc: data.desc});
+    socket.to(streamerIds[socket.room]).emit('streamer desc', {desc: data.desc, remoteId: socket.id});
   });
 
   socket.on('remote candidate', function(data) {
     console.log('client candidate to streamer.');
-    socket.to(streamerId).emit('streamer candidate', {candidate: data.candidate});
+    socket.to(streamerIds[socket.room]).emit('streamer candidate', {candidate: data.candidate, remoteId: socket.id});
   });
 
   socket.on('streamer candidate', function(data) {
     console.log('streamer candidate to client.');
-    socket.to(remoteId).emit('remote candidate', {candidate: data.candidate});
+    socket.to(data.remoteId).emit('remote candidate', {candidate: data.candidate});
   });
 });

@@ -13,37 +13,38 @@ $(function() {
 	var video = document.querySelector('video#gum');
 	
 	$('#connect_btn').click(function() {
-		socket.emit('streamer init');
+		socket.emit('streamer init', {room: lastPath});
 	});
 
 	$('#disconnect_btn').click(function() {
 		// socket.disconnect(true);	
 	});
 
-	var pc;
+	// peer connections
+	var pcs = {};
+	var remoteId;
+
 	var offerOptions = {
 		offerToReceiveAudio: 1,
 		offerToReceiveVideo: 1
 	};
 
-	var socketId;
-
 	socket.on('streamer init', function(data) {
-		socketId = data.id;
-		console.log('streamer socket id: ', socketId);
+		console.log('streamer socket id: ', data.id);
 	});
 
-	socket.on('streamer video', function() {
+	socket.on('streamer video', function(data) {
+		remoteId = data.remoteId;
 		var servers = null;
-		pc = new RTCPeerConnection(servers);
+		pcs[remoteId] = new RTCPeerConnection(servers);
 
-		socket.emit('streamer video');
-		pc.onicecandidate = iceCallbackLocal;
+		socket.emit('streamer video', {remoteId: remoteId});
+		pcs[remoteId].onicecandidate = iceCallbackLocal;
 		console.log('local: created pc.');
 
-		pc.addStream(window.localstream);
+		pcs[remoteId].addStream(window.localstream);
 		console.log('adding local stream to pc.');
-		pc.createOffer(gotDescriptionLocal, onCreateSessionDescriptionError, offerOptions);
+		pcs[remoteId].createOffer(gotDescriptionLocal, onCreateSessionDescriptionError, offerOptions);
 
 	});
 
@@ -58,15 +59,16 @@ $(function() {
 	}
 
 	function gotDescriptionLocal(desc) {
-		pc.setLocalDescription(desc);
+		pcs[remoteId].setLocalDescription(desc);
 		console.log('streamer desc: ', desc);
-		socket.emit('streamer desc', {desc: desc});
+		socket.emit('streamer desc', {desc: desc, remoteId: remoteId});
 	}
 
 	socket.on('streamer desc', function(data) {
+		remoteId = data.remoteId;
 		var tmpDescription = new RTCSessionDescription({type: data.desc.type,
 														sdp: data.desc.sdp});
-		pc.setRemoteDescription(tmpDescription);
+		pcs[remoteId].setRemoteDescription(tmpDescription);
 	});
 
 	function iceCallbackLocal(event) {
@@ -76,15 +78,16 @@ $(function() {
 	function handleCandidate(candidate) {
 		if(candidate) {
 			console.log('what is the candidate value of streamer? ', candidate);
-			socket.emit('streamer candidate', {candidate: candidate});
+			socket.emit('streamer candidate', {candidate: candidate, remoteId: remoteId});
 		}
 	}
 
 	socket.on('streamer candidate', function(data) {
+		remoteId = data.remoteId;
 		var tmpCandidate = new RTCIceCandidate({candidate: data.candidate.candidate,
 													sdpMid: data.candidate.sdpMid,
 													sdpMLineIndex: data.candidate.sdpMLineIndex});
-		pc.addIceCandidate(tmpCandidate,
+		pcs[remoteId].addIceCandidate(tmpCandidate,
 			onAddIceCandidateSuccess, onAddIceCandidateError);
 		console.log('streamer candidate: ', data.candidate);
 	});

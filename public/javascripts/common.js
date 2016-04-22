@@ -7,4 +7,3 @@ var lastPath = splitPath[lastIdx];
 if(lastPath === '') {
 	lastPath = splitPath[--lastIdx];
 }
-console.log('last path name: ', lastPath);

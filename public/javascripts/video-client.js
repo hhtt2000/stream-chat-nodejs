@@ -6,12 +6,9 @@ $(function() {
 	var socket = io('/channel');
 	var video = document.querySelector('video#gum');
 
-	var socketId;
-
-	socket.emit('remote init');
+	socket.emit('remote init', {room: lastPath});
 	socket.on('remote init', function(data) {
-		socketId = data.id;
-		console.log('remote socket id: ', socketId);
+		console.log('remote socket id: ', data.id);
 	});
 
 	var pc;

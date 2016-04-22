@@ -50,7 +50,7 @@ $(function() {
       $currentInput = $inputMessage.focus();
 
       // Tell the server your username
-      socket.emit('add user', username);
+      socket.emit('add user', {username: username, lastPath: lastPath});
     }
   }
 
@@ -232,7 +232,7 @@ $(function() {
   socket.on('login', function (data) {
     connected = true;
     // Display the welcome message
-    var message = "Welcome to Socket.IO Chat – ";
+    var message = "Welcome to "+ lastPath +" Chat – ";
     log(message, {
       prepend: true
     });
