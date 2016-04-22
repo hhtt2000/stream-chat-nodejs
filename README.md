@@ -15,8 +15,8 @@ npm start
 You can see the main page on [http://localhost](http://localhost).
 
 ## how to use
-If you want to braodcast your contents, you need to sign up first.
-And then click channel, find your id on the page. That is your room for broadcasting.
+If you want to braodcast your contents, you need to sign up first.  
+And then click channel, find your id on the page. That is your room for broadcasting.  
 On the page, choose a device to use, and click broadcast button.
 
 ## references
