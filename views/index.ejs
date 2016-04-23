@@ -10,6 +10,7 @@
     <p>Welcome to <%= title %></p>
     <% if(id) { %>
     <p>USER : <%= id %></p>
+    <a href="/channel/<%= id %>">BROADCAST</a><br>
     <a href="/logout">LOG OUT</a>
     <% } else { %>
     <a href="/signup">SIGN UP</a>

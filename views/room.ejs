@@ -10,7 +10,7 @@
 			<div class="row">
 				<div class="stream" style="float:left; width:70%;padding-left: 30px;">
 					<h1><%= user %></h1>
-					<video width="85%" id="gum" autoplay></video>
+					<video width="98%" id="gum" autoplay style="border-style: solid;"></video>
 					<% if(isStreamer) { %>
 					<button type="button" id="connect_btn">BROADCAST</button>
 					<button type="button" id="disconnect_btn">DISCONNECT</button>
@@ -27,7 +27,7 @@
 					    <li class="login page">
 					      <div class="form">
 					        <h3 class="title">What's your nickname?</h3>
-					        <% if(isStreamer) { %>
+					        <% if(user) { %>
 							<input class="usernameInput" type="text" maxlength="14" value="<%= user %>" />
 					        <% } else { %>
 					        <input class="usernameInput" type="text" maxlength="14" />
@@ -42,11 +42,11 @@
 		<script src="/socket.io/socket.io.js"></script>
 		<script src="/javascripts/webrtc/adapter.js"></script>
 		<script src="/javascripts/common.js"></script>
+		<script src="/javascripts/chat.js"></script>
 		<% if(isStreamer) { %>
 		<script src="/javascripts/video.js"></script>
 		<% } else { %>
 		<script src="/javascripts/video-client.js"></script>
 		<% } %>
-		<script src="/javascripts/chat.js"></script>
 	</body>
 </html>

@@ -23,6 +23,12 @@ var server = http.createServer(app);
 
 var io = require('socket.io')(server);
 
+/*
+  Create db for thumbnail.
+*/
+var Datastore = require('nedb');
+var db = new Datastore();
+
 /**
  * Listen on provided port, on all network interfaces.
  */
@@ -94,11 +100,13 @@ function onListening() {
 /*
   Stream + Chat Socekt
 */
-var channel = io.of('/channel');
+var chat = io.of('/chat');
+var video = io.of('/video');
 var numUsers = {};
 var streamerIds = {};
+var thumbnails = {};
 
-channel.on('connection', function (socket) {
+chat.on('connection', function (socket) {
   var addedUser = false;
 
   // when the client emits 'new message', this listens and executes
@@ -115,7 +123,7 @@ channel.on('connection', function (socket) {
     if (addedUser) return;
 
     // set the room to the current socket
-    socket.room = data.lastPath;
+    socket.room = data.room;
     socket.join(socket.room);
 
     // we store the username in the socket session for this client
@@ -162,10 +170,13 @@ channel.on('connection', function (socket) {
       socket.leave(socket.room);
     }
   });
+});
 
   // client <-> streamer
+video.on('connection', function (socket) {
   socket.on('streamer init', function(data) {
-    streamerIds[data.room] = socket.id;
+    socket.room = data.room;
+    streamerIds[socket.room] = socket.id;
     socket.emit('streamer init', {id: socket.id});
   });
 
@@ -208,4 +219,22 @@ channel.on('connection', function (socket) {
     console.log('streamer candidate to client.');
     socket.to(data.remoteId).emit('remote candidate', {candidate: data.candidate});
   });
+
+  // thumbnails for channel list 
+  socket.on('streamer thumbnail', function(data) {
+    thumbnails[socket.room] = data.imgUrl;    
+  });
+
+  socket.on('channel list', function() {
+    socket.emit('channel list', {thumbnails: thumbnails});
+  });
+
+  socket.on('disconnect', function () {
+      // 소켓 아이디와 streamerIds[socket.room] 가 같은 경우만
+      if(socket.id === streamerIds[socket.room]) {
+        console.log('streamer left the room.');
+        delete thumbnails[socket.room];  
+      }
+  });
 });
+

@@ -65,20 +65,14 @@ router.get('/logout', function(req, res) {
 });
 
 router.get('/channel', function(req, res) {
-	db.find({id: {$exists: true}}, function(err, docs) {
-		if(err) {
-			res.redirect('/');
-		}
-		//TODO 각 스트리머의 방에서 비디오 태그를 받아옴
-		res.render('channel', {rooms: docs});
-	});
+	res.render('channel');
 });
 
 router.get('/channel/:user', function(req, res, next) {
-  var user = req.params.user;
-  var isStreamer = (req.session.displayName === user) ? true : false;
-  console.log('isStreamer in router : ', isStreamer);
-  res.render('room', {user: user, isStreamer: isStreamer});
+  var loginUser = req.session.displayName;
+  var streamUser = req.params.user;
+  var isStreamer = (loginUser === streamUser) ? true : false;
+  res.render('room', {user: loginUser, isStreamer: isStreamer});
 });
 
 module.exports = router;

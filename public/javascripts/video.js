@@ -9,15 +9,37 @@ $(function() {
 						  	console.log('getUserMedia() error.');
 						  });
 
-	var socket = io('/channel');
+	var socket = io('/video');
 	var video = document.querySelector('video#gum');
+	var intervalId;
 	
 	$('#connect_btn').click(function() {
 		socket.emit('streamer init', {room: lastPath});
+		// take a snapshot & send dataUrl to the server every 5 minutes.
+		getSnapshot();
+		intervalId = setInterval(getSnapshot, 5 * 60 * 1000);
 	});
 
+	function getSnapshot() {
+		console.log('take a snap shot.');
+		var canvas = document.createElement('canvas');
+		canvas.width = 200;
+		canvas.height = 125;
+		canvas.getContext('2d')
+			  .drawImage(video, 0, 0, canvas.width, canvas.height);
+		var thumbnailURL = canvas.toDataURL();
+		socket.emit('streamer thumbnail', {imgUrl: thumbnailURL});
+	}
+
 	$('#disconnect_btn').click(function() {
-		// socket.disconnect(true);	
+		//stop interval
+		clearInterval(intervalId);
+
+		// close peer connections
+		for(var x in pcs) {
+			pcs[x].close();
+		}
+		socket.disconnect();	
 	});
 
 	// peer connections

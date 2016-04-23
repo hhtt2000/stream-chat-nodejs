@@ -3,7 +3,7 @@
 $(function() {
 	console.log('Start remote stream.');
 
-	var socket = io('/channel');
+	var socket = io('/video');
 	var video = document.querySelector('video#gum');
 
 	socket.emit('remote init', {room: lastPath});

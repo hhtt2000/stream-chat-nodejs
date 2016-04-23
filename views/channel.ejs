@@ -8,10 +8,45 @@
   <body>
     <h1>CHANNEL LIST</h1>
     <p>You can join one of the contents below.</p>
-    <% for(var idx in rooms) { %>
-    <a href="/channel/<%= rooms[idx].id %>"><%= rooms[idx].id %></a><br>
-    <% } %>
+    <div id="list"></div>
     <br>
     <a href="/">HOME</a>
+    <script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      var socket = io('/video');
+
+      socket.emit('channel list');
+      socket.on('channel list', function(data) {
+        var thumbnails = data.thumbnails;
+        var list = document.getElementById('list');
+        var path = '/channel/';
+        for(var room in thumbnails) {
+          var roomDiv = document.createElement('div');
+          roomDiv.className = 'room';
+
+          var a = document.createElement('a');
+          a.href = path + room;
+
+          var imgDiv = document.createElement('div');
+          imgDiv.className = 'room-img';
+          var img = document.createElement('img');
+          img.src = thumbnails[room];
+
+          imgDiv.appendChild(img);
+
+          var nameDiv = document.createElement('div');
+          nameDiv.className = 'room-name';
+          var roomName = document.createTextNode(room);
+
+          nameDiv.appendChild(roomName);
+
+          a.appendChild(imgDiv);
+          a.appendChild(nameDiv);
+          roomDiv.appendChild(a);
+          list.appendChild(roomDiv);
+        }
+      });
+    </script>
   </body>
 </html>

@@ -25,7 +25,7 @@ $(function() {
   var lastTypingTime;
   var $currentInput = $usernameInput.focus();
 
-  var socket = io('/channel');
+  var socket = io('/chat');
 
   function addParticipantsMessage (data) {
     var message = '';
@@ -50,7 +50,7 @@ $(function() {
       $currentInput = $inputMessage.focus();
 
       // Tell the server your username
-      socket.emit('add user', {username: username, lastPath: lastPath});
+      socket.emit('add user', {username: username, room: lastPath});
     }
   }
 
