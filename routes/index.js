@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var Datastore = require('nedb');
 var db = new Datastore();
+var bcrypt = require('bcrypt-nodejs');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -17,9 +18,10 @@ router.get('/signup', function(req, res, next) {
 });
 
 router.post('/signup', function(req, res, next) {
+	var hash = bcrypt.hashSync(req.body.password);
 	var data = {
 		id: req.body.id,
-		password: req.body.password
+		password: hash
 	};
 	db.insert(data, function(err, newDoc) {
 		if(err) {
@@ -38,18 +40,23 @@ router.get('/login', function(req, res, next) {
 
 router.post('/login', function(req, res) {
 	var data = {
-		id: req.body.id,
-		password: req.body.password
+		id: req.body.id
 	};
 	db.find(data, function(err, docs) {
 		if(err) {
 			res.redirect('back');
 		}
 		if(docs[0]) {
-			req.session.displayName = docs[0].id;
-			req.session.save(function() {
-				res.redirect('/');
-			});	
+			if(bcrypt.compareSync(req.body.password, docs[0].password) == true) {
+				console.log(`user id: ${docs[0].id}, password: ${docs[0].password}`);
+				req.session.displayName = docs[0].id;
+				req.session.save(function() {
+					res.redirect('/');
+				});
+			} else {
+				console.log(`It doesn't match with your password.`);
+				res.redirect('back');
+			}
 		} else {
 			console.log('no info for given id.');
 			res.redirect('back');
