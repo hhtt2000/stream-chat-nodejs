@@ -3,15 +3,16 @@ var router = express.Router();
 var Datastore = require('nedb');
 var db = new Datastore();
 var bcrypt = require('bcrypt-nodejs');
+var passport = require('passport');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  var displayName = req.session.displayName;
+  var displayName = req.user;
   res.render('index', { title: 'Video Streaming Chat', id: displayName });
 });
 
 router.get('/signup', function(req, res, next) {
-	if(req.session.displayName) {
+	if(req.user) {
 		res.redirect('/');
 	}
 	res.render('signup');
@@ -27,45 +28,28 @@ router.post('/signup', function(req, res, next) {
 		if(err) {
 			res.redirect('back');
 		}
-		req.session.displayName = newDoc.id;
-		req.session.save(function() {
-			res.redirect('/');
+		req.login(data, function(err) {
+			req.session.save(function() {
+				res.redirect('/');
+			});
 		});
 	});
 });
 
 router.get('/login', function(req, res, next) {
-	res.render('login');
+	var message = req.flash('message')[0];
+	res.render('login', {message: message});
 });
 
-router.post('/login', function(req, res) {
-	var data = {
-		id: req.body.id
-	};
-	db.find(data, function(err, docs) {
-		if(err) {
-			res.redirect('back');
-		}
-		if(docs[0]) {
-			if(bcrypt.compareSync(req.body.password, docs[0].password) == true) {
-				console.log(`user id: ${docs[0].id}, password: ${docs[0].password}`);
-				req.session.displayName = docs[0].id;
-				req.session.save(function() {
-					res.redirect('/');
-				});
-			} else {
-				console.log(`It doesn't match with your password.`);
-				res.redirect('back');
-			}
-		} else {
-			console.log('no info for given id.');
-			res.redirect('back');
-		}
-	});
-});
+router.post('/login',
+	passport.authenticate('local', {successRedirect: '/',
+									failureRedirect: '/login',
+									failureFlash: true}
+						)
+);
 
 router.get('/logout', function(req, res) {
-	delete req.session.displayName;
+	req.logout();
 	req.session.save(function() {
 		res.redirect('/');
 	});
@@ -76,10 +60,12 @@ router.get('/channel', function(req, res) {
 });
 
 router.get('/channel/:user', function(req, res, next) {
-  var loginUser = req.session.displayName;
+  var loginUser = req.user;
   var streamUser = req.params.user;
   var isStreamer = (loginUser === streamUser) ? true : false;
   res.render('room', {user: loginUser, isStreamer: isStreamer});
 });
 
-module.exports = router;
+// module.exports = router;
+exports.routes = router;
+exports.db = db;

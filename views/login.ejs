@@ -6,6 +6,9 @@
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
+    <% if(message && message.length > 0) { %>
+    <h4><%= message %></h4>
+    <% } %>
     <h1>LOG IN</h1>
     <p>You need to log in to broadcast your contents.</p>
     <form action="/login" method="post">

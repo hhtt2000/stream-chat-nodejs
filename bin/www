@@ -23,12 +23,6 @@ var server = http.createServer(app);
 
 var io = require('socket.io')(server);
 
-/*
-  Create db for thumbnail.
-*/
-var Datastore = require('nedb');
-var db = new Datastore();
-
 /**
  * Listen on provided port, on all network interfaces.
  */
@@ -230,7 +224,6 @@ video.on('connection', function (socket) {
   });
 
   socket.on('disconnect', function () {
-      // 소켓 아이디와 streamerIds[socket.room] 가 같은 경우만
       if(socket.id === streamerIds[socket.room]) {
         console.log('streamer left the room.');
         delete thumbnails[socket.room];  
