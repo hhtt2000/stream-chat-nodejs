@@ -232,7 +232,7 @@ $(function() {
   socket.on('login', function (data) {
     connected = true;
     // Display the welcome message
-    var message = "Welcome to "+ lastPath +" Chat – ";
+    var message = "Welcome to "+ decodeURIComponent(lastPath) +" Chat – ";
     log(message, {
       prepend: true
     });

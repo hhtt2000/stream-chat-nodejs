@@ -88,11 +88,11 @@ app.use(function(err, req, res, next) {
 
 // passport configurations related to routes/index
 passport.serializeUser(function(user, done) {
-  done(null, user.id);
+  done(null, user);
 });
 
-passport.deserializeUser(function(id, done) {
-  done(null, id);
+passport.deserializeUser(function(user, done) {
+  done(null, user);
 });
 
 passport.use(new LocalStrategy({
@@ -112,13 +112,42 @@ passport.use(new LocalStrategy({
         if(bcrypt.compareSync(password, docs[0].password) === false) {
           return done(null, false, req.flash('message', 'Invalid password.'));
         }
-        req.login(data, function(err) {
-          req.session.save(function() {
-            return done(null, docs[0]);
-          });
-        });
+        return done(null, docs[0]);
       } else {
         return done(null, false, req.flash('message', 'There is no such id.'));
+      }
+    });
+  }
+));
+
+passport.use(new FacebookStrategy({
+    clientID: 'facebook_app_id',
+    clientSecret: 'facebook_secret',
+    callbackURL: "/auth/facebook/callback"
+  },
+  function(accessToken, refreshToken, profile, cb) {
+    console.log('facebook profile: ', profile);
+    var data = {
+      id: profile.id
+    }
+    db.find(data, function(err, docs) {
+      if(err) {
+        return done(err);
+      }
+      if(docs[0]) {
+        return cb(err, docs[0]);
+      } else {
+        var newUser = {
+          id: profile.id,
+          displayName: profile.displayName
+        }
+        db.insert(newUser, function(err, newDoc) {
+          if(err) {
+            cb(err);
+          } else {
+            cb(err, newUser);
+          }
+        });
       }
     });
   }

@@ -26,7 +26,7 @@
           roomDiv.className = 'room';
 
           var a = document.createElement('a');
-          a.href = path + room;
+          a.href = path + decodeURIComponent(room);
 
           var imgDiv = document.createElement('div');
           imgDiv.className = 'room-img';
@@ -37,7 +37,7 @@
 
           var nameDiv = document.createElement('div');
           nameDiv.className = 'room-name';
-          var roomName = document.createTextNode(room);
+          var roomName = document.createTextNode(decodeURIComponent(room));
 
           nameDiv.appendChild(roomName);
 

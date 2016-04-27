@@ -8,9 +8,9 @@
   <body>
     <h1><%= title %></h1>
     <p>Welcome to <%= title %></p>
-    <% if(id) { %>
-    <p>USER : <%= id %></p>
-    <a href="/channel/<%= id %>">BROADCAST</a><br>
+    <% if(displayName) { %>
+    <p>USER : <%= displayName %></p>
+    <a href="/channel/<%= displayName %>">BROADCAST</a><br>
     <a href="/logout">LOG OUT</a>
     <% } else { %>
     <a href="/signup">SIGN UP</a>

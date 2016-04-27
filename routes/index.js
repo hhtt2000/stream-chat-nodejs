@@ -7,8 +7,11 @@ var passport = require('passport');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  var displayName = req.user;
-  res.render('index', { title: 'Video Streaming Chat', id: displayName });
+	console.log('index session value: ', req.user);
+  if(req.user) {
+  	var displayName = req.user.displayName;	
+  }
+  res.render('index', { title: 'Video Streaming Chat', displayName: displayName });
 });
 
 router.get('/signup', function(req, res, next) {
@@ -22,7 +25,8 @@ router.post('/signup', function(req, res, next) {
 	var hash = bcrypt.hashSync(req.body.password);
 	var data = {
 		id: req.body.id,
-		password: hash
+		password: hash,
+		displayName: req.body.displayName
 	};
 	db.insert(data, function(err, newDoc) {
 		if(err) {
@@ -42,10 +46,29 @@ router.get('/login', function(req, res, next) {
 });
 
 router.post('/login',
-	passport.authenticate('local', {successRedirect: '/',
-									failureRedirect: '/login',
-									failureFlash: true}
-						)
+	passport.authenticate('local', {failureRedirect: '/login',
+									failureFlash: true})
+								, function(req, res, next) {
+	req.session.save(function(err) {
+		if(err) {
+			return next(err);
+		}
+		res.redirect('/');
+	});								
+});
+
+router.get('/auth/facebook', passport.authenticate('facebook'));
+
+router.get('/auth/facebook/callback',
+	passport.authenticate('facebook', {failureRedirect: '/login'}),
+	function(req, res, next) {
+		req.session.save(function(err) {
+			if(err) {
+				next(err);
+			}
+			res.redirect('/');
+		});
+	}
 );
 
 router.get('/logout', function(req, res) {
@@ -60,10 +83,13 @@ router.get('/channel', function(req, res) {
 });
 
 router.get('/channel/:user', function(req, res, next) {
-  var loginUser = req.user;
+  var loginUser;
+  if(req.user) {
+  	loginUser = req.user.displayName;
+  }
   var streamUser = req.params.user;
   var isStreamer = (loginUser === streamUser) ? true : false;
-  res.render('room', {user: loginUser, isStreamer: isStreamer});
+  res.render('room', {user: loginUser, streamUser: streamUser, isStreamer: isStreamer});
 });
 
 // module.exports = router;
