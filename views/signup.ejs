@@ -6,6 +6,9 @@
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body>
+    <% if(message && message.length > 0) { %>
+    <h4><%= message %></h4>
+    <% } %>
     <h1>SIGN UP</h1>
     <p>You can broadcast your contents after sign-up.</p>
     <form action="/signup" method="post">

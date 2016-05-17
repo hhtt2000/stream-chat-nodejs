@@ -107,14 +107,24 @@ passport.use(new LocalStrategy({
     db.find(data, function(err, docs) {
       if(err) {
         return done(err);
-      }
-      if(docs[0]) {
-        if(bcrypt.compareSync(password, docs[0].password) === false) {
-          return done(null, false, req.flash('message', 'Invalid password.'));
-        }
-        return done(null, docs[0]);
       } else {
-        return done(null, false, req.flash('message', 'There is no such id.'));
+        if(docs[0]) {
+          if(bcrypt.compareSync(password, docs[0].password) === false) {
+            req.flash('info', 'Invalid password.');
+            req.session.save(function() {
+              return done(null, false);
+            });
+            //return done(null, false, {message: 'Invalid password.'});
+          } else {
+            return done(null, docs[0]);  
+          }
+        } else {
+          req.flash('info', 'There is no such id.');
+          req.session.save(function() {
+            return done(null, false);
+          });
+          //return done(null, false, req.flash('message', 'There is no such id.'));
+        }
       }
     });
   }
@@ -133,21 +143,22 @@ passport.use(new FacebookStrategy({
     db.find(data, function(err, docs) {
       if(err) {
         return done(err);
-      }
-      if(docs[0]) {
-        return cb(err, docs[0]);
       } else {
-        var newUser = {
-          id: profile.id,
-          displayName: profile.displayName
-        }
-        db.insert(newUser, function(err, newDoc) {
-          if(err) {
-            cb(err);
-          } else {
-            cb(err, newUser);
+        if(docs[0]) {
+          return cb(err, docs[0]);
+        } else {
+          var newUser = {
+            id: profile.id,
+            displayName: profile.displayName
           }
-        });
+          db.insert(newUser, function(err, newDoc) {
+            if(err) {
+              cb(err);
+            } else {
+              cb(err, newUser);
+            }
+          });
+        }
       }
     });
   }

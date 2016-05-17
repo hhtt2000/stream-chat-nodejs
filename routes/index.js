@@ -4,10 +4,11 @@ var Datastore = require('nedb');
 var db = new Datastore();
 var bcrypt = require('bcrypt-nodejs');
 var passport = require('passport');
+var Joi = require('joi');
+var flash = require('connect-flash');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-	console.log('index session value: ', req.user);
   if(req.user) {
   	var displayName = req.user.displayName;	
   }
@@ -18,30 +19,61 @@ router.get('/signup', function(req, res, next) {
 	if(req.user) {
 		res.redirect('/');
 	}
-	res.render('signup');
+	res.render('signup', {message: req.flash('info')[0]});
 });
 
 router.post('/signup', function(req, res, next) {
-	var hash = bcrypt.hashSync(req.body.password);
-	var data = {
-		id: req.body.id,
-		password: hash,
-		displayName: req.body.displayName
-	};
-	db.insert(data, function(err, newDoc) {
+	db.find({id: req.body.id}, function(err, docs) {
 		if(err) {
+			console.log(err);
 			res.redirect('back');
+		} else {
+			if(docs[0]) {
+				req.flash('info', 'duplicated id.');
+				req.session.save(function() {
+					res.redirect('back');
+				});
+			} else {
+				var schema = Joi.object().keys({
+					id: Joi.string().alphanum().min(3).max(30).required(),
+					password: Joi.string().min(10).required(),
+					displayName: Joi.string().alphanum().min(3).max(20).required()
+				});
+
+				var data = {
+					id: req.body.id,
+					password: req.body.password,
+					displayName: req.body.displayName
+				};
+
+				Joi.validate(data, schema, function(err, value) {
+					if(err) {
+						req.flash('info', err.details[0].message);
+						req.session.save(function() {
+							res.redirect('back');
+						});
+					} else {
+						data.password = bcrypt.hashSync(req.body.password);
+						db.insert(data, function(err, newDoc) {
+							if(err) {
+								res.redirect('back');
+							} else {
+								req.login(data, function(err) {
+									req.session.save(function() {
+										res.redirect('/');
+									});
+								});
+							}
+						});
+					}
+				});
+			}
 		}
-		req.login(data, function(err) {
-			req.session.save(function() {
-				res.redirect('/');
-			});
-		});
 	});
 });
 
 router.get('/login', function(req, res, next) {
-	var message = req.flash('message')[0];
+	var message = req.flash('info')[0];
 	res.render('login', {message: message});
 });
 
@@ -54,7 +86,7 @@ router.post('/login',
 			return next(err);
 		}
 		res.redirect('/');
-	});								
+	});
 });
 
 router.get('/auth/facebook', passport.authenticate('facebook'));
@@ -64,7 +96,7 @@ router.get('/auth/facebook/callback',
 	function(req, res, next) {
 		req.session.save(function(err) {
 			if(err) {
-				next(err);
+				return next(err);
 			}
 			res.redirect('/');
 		});
